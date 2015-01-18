@@ -6,6 +6,9 @@
 #define NULL 0
 #endif 
 
+/* foreach macro */
+#define TLIST_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list); !name.IsFinished(); name.Next())
+
 /* Nodes to store in the TList */
 template<typename T>
 struct TListNode
@@ -22,7 +25,9 @@ struct TListNode
 	{
 		_next = _prev = NULL;
 	}
-};
+};/* End of TListNode */
+
+
 
 /* Templated class for linked list */
 template<typename T>
@@ -49,6 +54,12 @@ public:
 	{
 		//empty the list
 		Empty();
+	}
+
+	//getter for head
+	inline TListNode<T>* Head()
+	{
+		return _head;
 	}
 
 	//empty the list
@@ -130,6 +141,99 @@ public:
 		//increment count
 		_count++;
 	}
-};
+}; /* End of TList */
+
+
+/*Templated class to iterate over a TList*/
+template<typename T>
+class TListIter
+{
+private:
+	//the list to iterate over
+	TList<T>* _list;
+
+	//the current list node
+	TListNode<T>* _current;
+public:
+	//default ctor (should not be used)
+	TListIter()
+	{
+		_list = NULL;
+		_current = NULL;
+	}
+
+	//dtor
+	~TListIter()
+	{
+		_list = NULL;
+		_current = NULL;
+	}
+
+	/* this is the ctor that should be used to instantiate a iter */
+	TListIter(TList<T>* list)
+	{
+		//set let
+		_list = list;
+		//get the head
+		_current = _list->Head();
+	}
+
+	/* returns true if the iterator is finished iterating through list */
+	inline bool IsFinished()
+	{
+		return (_current == NULL);
+	}
+
+	/* methods for getting the next node */
+	TListIter<T> operator++()
+	{
+		return Next();
+	}
+	TListIter<T> operator++(int)
+	{
+		TListIter<T> tmp(*this); // copy
+		operator++(); // pre-increment
+		return tmp;   // return old value
+	}
+	inline TListIter<T> Next()
+	{
+		// actual increment takes place here
+		if (_current != NULL)
+		{
+			_current = _current->_next;
+		}
+		return (*this);
+	} /* End of methods for incrementing */
+
+
+	/* Functions for referencing the data that the current node holds */
+	//itr.Value()
+	inline T Value()
+	{
+		T ret = T();
+		if (_current != NULL)
+		{
+			ret = _current->_data;
+		}
+		return ret;
+	}
+	//itr->
+	T operator->()
+	{
+		return Value();
+	} 
+	//(*itr)
+	T operator*()
+	{
+		return Value();
+	}
+	//(T)itr     (i.e. cast operator)
+	operator T()
+	{
+		return Value();
+	}/* End of accessing functions */
+
+};/* End of TListIter */
+
 
 #endif
