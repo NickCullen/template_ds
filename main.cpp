@@ -40,13 +40,21 @@ void RunTListTests()
 	list.PushBack(new TestClass());
 	list.PushBack(new TestClass());
 
+	//add a hundred classes
+	for(int i =0; i < 100; i++)
+	{
+		list.PushBack(new TestClass());
+	}
+
 	//removing
 	TestClass* val = list.PopBack();
 
 	//count check
 	int count = list.Count();
+	printf("List Count = %d\n", count);
 
 	//iterting manually
+	printf("\nManual Iteration of TList\n");
 	for (TListIter<TestClass*> itr = TListIter<TestClass*>(&list); !itr.IsFinished(); itr++)
 	{
 		TestClass* cl = (TestClass*)itr;
@@ -54,6 +62,14 @@ void RunTListTests()
 	}
 
 	//iterating via foreach macro - reads (foreach TestClass* cl in list)
+	printf("\nforeach Iteration off TList\n");
+	TLIST_foreach(TestClass*, cl, list)
+	{
+		printf("value = %d\n", cl->_data);
+	}
+
+	//reverse foreach iteration testing
+	printf("\nreverse foreach iteration of TList\n");
 	TLIST_foreach(TestClass*, cl, list)
 	{
 		printf("value = %d\n", cl->_data);

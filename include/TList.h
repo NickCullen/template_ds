@@ -1,6 +1,8 @@
 #ifndef TLIST_H
 #define TLIST_H
 
+#include <stdio.h>
+
 /* Definitions and macros */
 #ifndef NULL
 #define NULL 0
@@ -8,6 +10,11 @@
 
 /* foreach macro */
 #define TLIST_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list); !name.IsFinished(); name.Next())
+#define TLIST_rev_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>::EndOf(&in_list); !name.IsFinished(); name.Prev())
+
+/* foreach macro when a list is being used as a pointer */
+#define TLISTPTR_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(in_list); !name.IsFinished(); name.Next())
+#define TLISTPTR_rev_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>::EndOf(in_list); !name.IsFinished(); name.Prev())
 
 /* Nodes to store in the TList */
 template<typename T>
@@ -60,6 +67,12 @@ public:
 	inline TListNode<T>* Head()
 	{
 		return _head;
+	}
+
+	//getter for top
+	inline TListNode<T>* Top()
+	{
+		return _top;
 	}
 
 	//empty the list
@@ -141,6 +154,9 @@ public:
 		//increment count
 		_count++;
 	}
+
+	
+
 }; /* End of TList */
 
 
@@ -206,6 +222,27 @@ public:
 	} /* End of methods for incrementing */
 
 
+	/* methods for getting the prev node */
+	TListIter<T> operator--()
+	{
+		return Prev();
+	}
+	TListIter<T> operator--(int)
+	{
+		TListIter<T> tmp(*this); // copy
+		operator--(); // pre-decrement
+		return tmp;   // return old value
+	}
+	inline TListIter<T> Prev()
+	{
+		// actual decrement takes place here
+		if (_current != NULL)
+		{
+			_current = _current->_prev;
+		}
+		return (*this);
+	} /* End of methods for decrementing */
+
 	/* Functions for referencing the data that the current node holds */
 	//itr.Value()
 	inline T Value()
@@ -233,6 +270,24 @@ public:
 		return Value();
 	}/* End of accessing functions */
 
+	/* Static function to create an iterator at the start of a list */
+	static TListIter<T> StartOf(TList<T>* list)
+	{
+		//create a TLIstIter (will default to start of list anyway)
+		TListIter<T> start = TListIter<T>(list);
+		return start;
+	}
+
+	/* Static function to create an iterator at the end of a list */
+	static TListIter<T> EndOf(TList<T>* list)
+	{
+		//create a TLIstIter 
+		TListIter<T> end = TListIter<T>(list);
+		//set its current to equal the top of the list
+		end._current = list->Top();
+
+		return end;
+	}
 };/* End of TListIter */
 
 
