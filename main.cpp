@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "TList.h"
+#include "tds.h"
 
 
 class TestClass
@@ -70,7 +70,7 @@ void RunTListTests()
 
 	//reverse foreach iteration testing
 	printf("\nreverse foreach iteration of TList\n");
-	TLIST_foreach(TestClass*, cl, list)
+	TLIST_rev_foreach(TestClass*, cl, list)
 	{
 		printf("value = %d\n", cl->_data);
 	}

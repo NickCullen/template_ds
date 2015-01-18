@@ -1,8 +1,6 @@
 #ifndef TLIST_H
 #define TLIST_H
 
-#include <stdio.h>
-
 /* Definitions and macros */
 #ifndef NULL
 #define NULL 0
