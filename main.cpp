@@ -112,10 +112,19 @@ void RunTStackTests()
 
 }
 
-int CompareInt(int lhs, int rhs)
+//called when inserting an object into the list
+int CompareClass(TestClass* lhs, TestClass* rhs)
 {
-	if (lhs < rhs) return -1;
-	else if (lhs > rhs) return 1;
+	if (lhs->_data < rhs->_data) return -1;
+	else if (lhs->_data > rhs->_data) return 1;
+	else return 0;
+}
+
+//function called by TTree to determine if it should go left, right or found the item in search
+int FindObject(int id, TestClass* current)
+{
+	if (id < current->_data) return -1;
+	else if (id  > current->_data) return 1;
 	else return 0;
 }
 
@@ -123,19 +132,19 @@ int CompareInt(int lhs, int rhs)
 void RunTTreeTests()
 {
 	//create a ttree
-	TTree<int> tree;
+	TTree<TestClass*> tree;
 
 	//set the comparison func (note: can be set in constructor)
-	tree.SetComparisonFunc(CompareInt);
-
+	tree.SetComparisonFunc(CompareClass);
 
 	//insert into tree
 	for (int i = 0; i < 10; i++)
 	{
-		tree.Insert(rand() % 50);
+		tree.Insert(new TestClass("MyName"));
 	}
 
-	//find an item on the left
+	//find an item on the tree
+	tree.Find<int>(50, FindObject);
 }
 
 int main(int argc, char** argv)

@@ -13,11 +13,12 @@ struct TTreeNode
 	T _data;
 	TTreeNode<T>* _left;
 	TTreeNode<T>* _right;
+	TTreeNode<T>* _parent;
 
 	//ctor
 	TTreeNode()
 	{
-		_left = _right = NULL;
+		_left = _right = _parent = NULL;
 	}
 }; /* End of TTreeNode */
 
@@ -32,7 +33,6 @@ private:
 
 	//node count
 	int _count;
-
 
 	/* The comparison function used to insert and retrieve nodes from the tree *
 	* return -1 if lhs < rhs                                                  *
@@ -120,6 +120,9 @@ public:
 		//if we are not inserting into the root
 		if (prev)
 		{
+			//set parent 
+			cur->_parent = prev;
+
 			//set the previous left/right pointer
 			if (result <= -1)
 				prev->_left = cur;
@@ -131,6 +134,48 @@ public:
 		{
 			_root = cur;
 		}
+	}
+
+	/* This function will search the tree for the required item                            *
+	 * it accepts a search function similar to the comparison function                     *
+	 * Except it will required the function to let the tree know if to go left or right    *
+	 * return -1 will go left                                                              *
+	 * return 1 will go right                                                              *
+	 * return 0 if object has been found                                                   */
+	template<typename IDType>
+	T Find(IDType id, int(*SearchFunc)(IDType, T))
+	{
+		//start at _root
+		TTreeNode<T>* cur = _root;
+
+		//instantiate result here so we dont reinstantiate it in while loop
+		int result = 0;
+
+		//value to return
+		T ret = T();
+
+		//get the next available node
+		while (cur != NULL)
+		{
+			//run search function to tell us to go left, right or found
+			result = SearchFunc(id, cur->_data);
+
+			//if result != 0 then go left or right
+			if (result != 0)
+			{
+				//get next node (if -1 got left if 0 or 1 go right)
+				cur = result <= -1 ? cur->_left : cur->_right;
+			}
+			//else it has been found so return the data
+			else
+			{
+				ret = cur->_data;
+				break;
+			}
+		}
+
+		//return the data
+		return ret;
 	}
 
 };
