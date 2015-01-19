@@ -112,6 +112,32 @@ void RunTStackTests()
 
 }
 
+int CompareInt(int lhs, int rhs)
+{
+	if (lhs < rhs) return -1;
+	else if (lhs > rhs) return 1;
+	else return 0;
+}
+
+/* Contains all tests running on TTree */
+void RunTTreeTests()
+{
+	//create a ttree
+	TTree<int> tree;
+
+	//set the comparison func (note: can be set in constructor)
+	tree.SetComparisonFunc(CompareInt);
+
+
+	//insert into tree
+	for (int i = 0; i < 10; i++)
+	{
+		tree.Insert(rand() % 50);
+	}
+
+	//find an item on the left
+}
+
 int main(int argc, char** argv)
 {
 	/* Run TList Tests */
@@ -119,6 +145,9 @@ int main(int argc, char** argv)
 
 	/* Run TStack Tests */
 	RunTStackTests();
+
+	/* Run TTree Tests */
+	RunTTreeTests();
 
 	return 0;
 }
