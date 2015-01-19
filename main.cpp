@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include "tds.h"
+#include <string>
 
+
+#define NDEBUG 
 
 class TestClass
 {
@@ -10,13 +13,14 @@ private:
 public:
 	int _data;
 	bool _more_data;
+	char _name[256];
 
-
-	TestClass()
+	TestClass(const char* name)
 	{
 		_data = _static_data;
 		_more_data = (_data % 2 == 0);
 		_static_data += 5;
+		strcpy(_name, name);
 	}
 
 	~TestClass()
@@ -35,19 +39,23 @@ void RunTListTests()
 	TList<TestClass*> list;
 
 	//adding
-	list.PushBack(new TestClass());
-	list.PushBack(new TestClass());
-	list.PushBack(new TestClass());
-	list.PushBack(new TestClass());
+	list.PushBack(new TestClass("Instance1"));
+	list.PushBack(new TestClass("Instance2"));
+	list.PushBack(new TestClass("Instance3"));
+	list.PushBack(new TestClass("Instance4"));
 
-	//add a hundred classes
-	for(int i =0; i < 100; i++)
+	//add some more classes
+	/*for(int i =0; i < 10; i++)
 	{
-		list.PushBack(new TestClass());
-	}
+		list.PushBack(new TestClass("AutoCreated"));
+	}*/
 
 	//removing
 	TestClass* val = list.PopBack();
+
+	//add the object to remove later
+	TestClass* to_remove = new TestClass("ToRemove");
+	list.PushBack(to_remove);
 
 	//count check
 	int count = list.Count();
@@ -55,7 +63,7 @@ void RunTListTests()
 
 	//iterting manually
 	printf("\nManual Iteration of TList\n");
-	for (TListIter<TestClass*> itr = TListIter<TestClass*>(&list); !itr.IsFinished(); itr++)
+	for (TListIter<TestClass*> itr = TListIter<TestClass*>(&list,false); !itr.IsFinished(); itr++)
 	{
 		TestClass* cl = (TestClass*)itr;
 		printf("value = %d\n", itr->_data);
@@ -66,20 +74,51 @@ void RunTListTests()
 	TLIST_foreach(TestClass*, cl, list)
 	{
 		printf("value = %d\n", cl->_data);
+		list.Remove(cl);
 	}
 
 	//reverse foreach iteration testing
 	printf("\nreverse foreach iteration of TList\n");
 	TLIST_rev_foreach(TestClass*, cl, list)
 	{
-		printf("value = %d\n", cl->_data);
+		printf("%s value = %d\n", cl->_name, cl->_data);
 	}
+
+	//remove to_remove
+	list.Remove(to_remove);
+
+	//clear list
+	list.Empty();
+}
+
+/* Contains all tests running on TList */
+void RunTStackTests()
+{
+	//create stack
+	TStack<int> stack;
+
+	//test pushing ints onto stack
+	for (int i = 0; i < 10; i++)
+	{
+		stack.Push(i);
+	}
+
+	//test popping and peaking
+	while (!stack.IsEmpty())
+	{
+		printf("Popping %d \n", stack.Peek());
+		stack.Pop();
+	}
+
 }
 
 int main(int argc, char** argv)
 {
 	/* Run TList Tests */
 	RunTListTests();
+
+	/* Run TStack Tests */
+	RunTStackTests();
 
 	return 0;
 }

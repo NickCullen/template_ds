@@ -1,18 +1,24 @@
 #ifndef TLIST_H
 #define TLIST_H
 
+/* Forward Decl */
+template<typename T>
+class TList;
+template<typename T>
+class TListIter;
+
 /* Definitions and macros */
 #ifndef NULL
 #define NULL 0
 #endif 
 
 /* foreach macro */
-#define TLIST_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list); !name.IsFinished(); name.Next())
-#define TLIST_rev_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>::EndOf(&in_list); !name.IsFinished(); name.Prev())
+#define TLIST_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list, false, true); !name.IsFinished(); name.Next())
+#define TLIST_rev_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list, true, true); !name.IsFinished(); name.Prev())
 
 /* foreach macro when a list is being used as a pointer */
-#define TLISTPTR_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(in_list); !name.IsFinished(); name.Next())
-#define TLISTPTR_rev_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>::EndOf(in_list); !name.IsFinished(); name.Prev())
+#define TLISTPTR_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list, false, true); !name.IsFinished(); name.Next())
+#define TLISTPTR_rev_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list, true, true); !name.IsFinished(); name.Prev())
 
 /* Nodes to store in the TList */
 template<typename T>
@@ -83,7 +89,7 @@ public:
 	//returns true if no items on list
 	inline bool IsEmpty()
 	{
-		return (_head == NULL);
+		return !_count;
 	}
 
 	//returns number of nodes
@@ -153,7 +159,71 @@ public:
 		_count++;
 	}
 
-	
+	//remove type from list
+	bool Remove(T instance)
+	{
+		//first find it
+		TListNode<T>* cur = _head;
+		while (cur)
+		{
+			//if not what we are looking for get next else break
+			if (cur->_data != instance)
+				cur = cur->_next;
+			else
+				break;
+		}
+
+		//remove node
+		return Remove(cur);
+	}
+
+	//removes a node from the list
+	bool Remove(TListNode<T>* node)
+	{
+		bool ret = false;
+		//make sure it isnt a null node
+		if (node != NULL)
+		{
+			//store prev and next
+			TListNode<T>* prev = node->_prev;
+			TListNode<T>* next = node->_next;
+
+			//if the node is the top we are removing the end of the list
+			if (node == _top) _top = _top->_prev;
+
+			//if the node is the end then we are removing the first item
+			if (node == _head) _head = _head->_next;
+
+			//link prev to next and vis versa
+			if(prev) prev->_next = next;
+			if(next) next->_prev = prev;
+
+			//delete node
+			delete(node);
+
+			//deduct count
+			_count--;
+
+			//return true
+			ret = true;
+		}
+
+		return ret;
+	}
+
+	//remove iterator from list (this is implemented at bottom of header file for linking issues
+	bool Remove(TListIter<T> itr)
+	{
+		//raise error if trying to remove an iterator in a foreach loop!
+		if (itr._foreach)
+		{
+			printf("ERROR removing an iterator in a foreach loop - this is not allowed!\n");
+			return false;
+		}
+
+		//remove
+		return Remove(itr._current);
+	}
 
 }; /* End of TList */
 
@@ -162,34 +232,37 @@ public:
 template<typename T>
 class TListIter
 {
+	template<typename T>
+	friend class TList;
 private:
-	//the list to iterate over
-	TList<T>* _list;
-
 	//the current list node
 	TListNode<T>* _current;
+
+	//set to true when used in a foreach loop
+	bool _foreach;
+
 public:
 	//default ctor (should not be used)
 	TListIter()
 	{
-		_list = NULL;
 		_current = NULL;
+		_foreach = false;
 	}
 
 	//dtor
 	~TListIter()
 	{
-		_list = NULL;
 		_current = NULL;
 	}
 
 	/* this is the ctor that should be used to instantiate a iter */
-	TListIter(TList<T>* list)
+	TListIter(TList<T>* list, bool end, bool used_in_foreach = false)
 	{
-		//set let
-		_list = list;
 		//get the head
-		_current = _list->Head();
+		_current = end ? list->Top() : list->Head();
+
+		//set if we are using this iterator in a foreach loop or not
+		_foreach = used_in_foreach;
 	}
 
 	/* returns true if the iterator is finished iterating through list */
@@ -268,25 +341,6 @@ public:
 		return Value();
 	}/* End of accessing functions */
 
-	/* Static function to create an iterator at the start of a list */
-	static TListIter<T> StartOf(TList<T>* list)
-	{
-		//create a TLIstIter (will default to start of list anyway)
-		TListIter<T> start = TListIter<T>(list);
-		return start;
-	}
-
-	/* Static function to create an iterator at the end of a list */
-	static TListIter<T> EndOf(TList<T>* list)
-	{
-		//create a TLIstIter 
-		TListIter<T> end = TListIter<T>(list);
-		//set its current to equal the top of the list
-		end._current = list->Top();
-
-		return end;
-	}
 };/* End of TListIter */
-
 
 #endif
