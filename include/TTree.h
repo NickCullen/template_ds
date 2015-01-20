@@ -9,6 +9,12 @@ template<typename T> class TTreeIter;
 #define NULL 0
 #endif
 
+/* foreach macro */
+#define TTREE_foreach(Type, name, in_tree) for (TTreeIter<Type> name = TTreeIter<Type>(&in_tree, true); !name.IsFinished(); name.Next())
+
+/* foreach macro when a list is being used as a pointer */
+#define TTREEPTR_foreach(Type, name, in_tree) for (TTreeIter<Type> name = TTreeIter<Type>(&in_tree, true); !name.IsFinished(); name.Next())
+
 /* A Tree Node */
 template<typename T>
 struct TTreeNode
@@ -67,6 +73,10 @@ public:
 	//this is the ctor that should be used!
 	TTree(int (*ComparisonFunc)(T, T))
 	{
+		_root = NULL;
+		_comparison = NULL;
+		_count = 0;
+
 		SetComparisonFunc(ComparisonFunc);
 	}
 
@@ -210,7 +220,7 @@ private:
     TTreeNode<T>* SearchUpForNode(TTreeNode<T>* node)
     {
         //get parent
-        TTreeNode<T> parent = node->_parent;
+        TTreeNode<T>* parent = node->_parent;
         return parent;
     }
 public:
@@ -260,48 +270,30 @@ public:
     inline TTreeIter<T> Next()
     {
         // actual increment takes place here
-        if (_current != NULL)
+		while (_current != NULL)
         {
-            if(_current->_left->_last_visitor != this)
+			//go left if available
+			if (_current->_left && _current->_left->_last_visitor != this)
             {
                 _current = _current->_left;
                 _current->_last_visitor = this;
+				break;
             }
-            else if(_current->_right->_last_visitor != this)
+			//go right if available
+			else if (_current->_right && _current->_right->_last_visitor != this)
             {
                 _current = _current->_right;
                 _current->_last_visitor = this;
+				break;
             }
-            //go up in the tree until we find the next node
+            //set parent
             else
             {
-                _current = SearchUpForNode(_current);
+				_current = _current->_parent;
             }
         }
         return (*this);
     } /* End of methods for incrementing */
-    
-    
-    /* methods for getting the prev node */
-    TListIter<T> operator--()
-    {
-        return Prev();
-    }
-    TListIter<T> operator--(int)
-    {
-        TListIter<T> tmp(*this); // copy
-        operator--(); // pre-decrement
-        return tmp;   // return old value
-    }
-    inline TListIter<T> Prev()
-    {
-        // actual decrement takes place here
-        if (_current != NULL)
-        {
-            _current = _current->_prev;
-        }
-        return (*this);
-    } /* End of methods for decrementing */
     
     /* Functions for referencing the data that the current node holds */
     //itr.Value()
@@ -330,7 +322,7 @@ public:
         return Value();
     }/* End of accessing functions */
     
-};/* End of TListIter */
+};/* End of TTreeIter */
 
 
 

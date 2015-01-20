@@ -134,6 +134,14 @@ int FindObject(int id, TestClass* current)
 	else return 0;
 }
 
+//for inserting ints
+int CompareInt(int lhs, int rhs)
+{
+	if (lhs < rhs) return -1;
+	else if (lhs > rhs) return 1;
+	else return 0;
+}
+
 /* Contains all tests running on TTree */
 void RunTTreeTests()
 {
@@ -153,13 +161,30 @@ void RunTTreeTests()
 
 	//find an item on the tree
 	TestClass* tmp = tree.Find<int>(50, FindObject);
-
-
-	//iterate over the tree
-	TTreeIter<TestClass*> itr = TTreeIter<TestClass*>(&tree);
-    
-    
 	
+	//create a tree of ints (just easier to work with for now)
+	TTree<int> int_tree = TTree<int>(CompareInt);
+
+	//populate with random
+	for (int i = 0; i < 20; i++)
+	{
+		int_tree.Insert(rand() % 100);
+	}
+
+	//iterate through tree
+	printf("Manual iteration \n");
+	for (TTreeIter<int> itr = TTreeIter<int>(&int_tree); !itr.IsFinished(); itr++)
+	{
+		printf("%d\n", (int)itr);
+	}
+	
+	//foreach through tree
+	printf("Foreach iteration\n");
+	TTREE_foreach(int, data, int_tree)
+	{
+		printf("%d\n", *data);
+	}
+
 	printf("\n---------\n");
 }
 
