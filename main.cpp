@@ -35,6 +35,8 @@ int TestClass::_static_data = 0;
 /* Contains all tests running on TList */
 void RunTListTests()
 {
+	printf("\n--- TList Tests ---\n");
+
 	//instantiate
 	TList<TestClass*> list;
 
@@ -74,7 +76,6 @@ void RunTListTests()
 	TLIST_foreach(TestClass*, cl, list)
 	{
 		printf("value = %d\n", cl->_data);
-		list.Remove(cl);
 	}
 
 	//reverse foreach iteration testing
@@ -89,11 +90,15 @@ void RunTListTests()
 
 	//clear list
 	list.Empty();
+
+	printf("\n---------\n");
 }
 
 /* Contains all tests running on TList */
 void RunTStackTests()
 {
+	printf("\n--- TStack Tests ---\n");
+
 	//create stack
 	TStack<int> stack;
 
@@ -110,6 +115,7 @@ void RunTStackTests()
 		stack.Pop();
 	}
 
+	printf("\n---------\n");
 }
 
 //called when inserting an object into the list
@@ -131,6 +137,8 @@ int FindObject(int id, TestClass* current)
 /* Contains all tests running on TTree */
 void RunTTreeTests()
 {
+	printf("\n--- TTree Tests ---\n");
+
 	//create a ttree
 	TTree<TestClass*> tree;
 
@@ -144,7 +152,15 @@ void RunTTreeTests()
 	}
 
 	//find an item on the tree
-	tree.Find<int>(50, FindObject);
+	TestClass* tmp = tree.Find<int>(50, FindObject);
+
+
+	//iterate over the tree
+	TTreeIter<TestClass*> itr = TTreeIter<TestClass*>(&tree);
+    
+    
+	
+	printf("\n---------\n");
 }
 
 int main(int argc, char** argv)

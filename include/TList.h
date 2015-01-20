@@ -232,8 +232,7 @@ public:
 template<typename T>
 class TListIter
 {
-	template<typename T>
-	friend class TList;
+	friend class TList<T>;
 private:
 	//the current list node
 	TListNode<T>* _current;

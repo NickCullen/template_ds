@@ -1,6 +1,9 @@
 #ifndef TTREE_H
 #define TTREE_H
 
+/* Forward Decl */
+template<typename T> class TTreeIter;
+
 /* Definitions */
 #ifndef NULL
 #define NULL 0
@@ -10,16 +13,27 @@
 template<typename T>
 struct TTreeNode
 {
+	//the data
 	T _data;
+
+	//left and right child nodes
 	TTreeNode<T>* _left;
 	TTreeNode<T>* _right;
+
+	//the parent of this node
 	TTreeNode<T>* _parent;
+
+	//the last iterator to visit this node
+	TTreeIter<T>* _last_visitor;
 
 	//ctor
 	TTreeNode()
 	{
 		_left = _right = _parent = NULL;
+		_last_visitor = NULL;
 	}
+
+
 }; /* End of TTreeNode */
 
 
@@ -27,6 +41,7 @@ struct TTreeNode
 template<typename T>
 class TTree
 {
+	friend class TTreeIter<T>;
 private:
 	//root of the tree
 	TTreeNode<T>* _root;
@@ -177,6 +192,153 @@ public:
 		//return the data
 		return ret;
 	}
+}; /* End of TTree */
 
-};
+
+/* iterator for TTree */
+template<typename T>
+class TTreeIter
+{
+private:
+	//the current tree node
+	TTreeNode<T>* _current;
+    
+    //flag for foreach
+    bool _foreach;
+    
+    //searches upwards in tree until it finds a node
+    TTreeNode<T>* SearchUpForNode(TTreeNode<T>* node)
+    {
+        //get parent
+        TTreeNode<T> parent = node->_parent;
+        return parent;
+    }
+public:
+	//ctor
+	TTreeIter()
+	{
+		_current = NULL;
+        _foreach = false;
+	}
+
+	//dtor
+	~TTreeIter()
+	{
+
+	}
+
+    /* this is the ctor that should be used to instantiate a iter */
+    TTreeIter(TTree<T>* tree, bool used_in_foreach = false)
+    {
+        //get the root node
+        _current = tree->_root;
+        
+        //set its last visitor to be this
+        _current->_last_visitor = this;
+        
+        //set if we are using this iterator in a foreach loop or not
+        _foreach = used_in_foreach;
+    }
+    
+    /* returns true if the iterator is finished iterating through list */
+    inline bool IsFinished()
+    {
+        return (_current == NULL);
+    }
+    
+    /* methods for getting the next node */
+    TTreeIter<T> operator++()
+    {
+        return Next();
+    }
+    TTreeIter<T> operator++(int)
+    {
+        TTreeIter<T> tmp(*this); // copy
+        operator++(); // pre-increment
+        return tmp;   // return old value
+    }
+    inline TTreeIter<T> Next()
+    {
+        // actual increment takes place here
+        if (_current != NULL)
+        {
+            if(_current->_left->_last_visitor != this)
+            {
+                _current = _current->_left;
+                _current->_last_visitor = this;
+            }
+            else if(_current->_right->_last_visitor != this)
+            {
+                _current = _current->_right;
+                _current->_last_visitor = this;
+            }
+            //go up in the tree until we find the next node
+            else
+            {
+                _current = SearchUpForNode(_current);
+            }
+        }
+        return (*this);
+    } /* End of methods for incrementing */
+    
+    
+    /* methods for getting the prev node */
+    TListIter<T> operator--()
+    {
+        return Prev();
+    }
+    TListIter<T> operator--(int)
+    {
+        TListIter<T> tmp(*this); // copy
+        operator--(); // pre-decrement
+        return tmp;   // return old value
+    }
+    inline TListIter<T> Prev()
+    {
+        // actual decrement takes place here
+        if (_current != NULL)
+        {
+            _current = _current->_prev;
+        }
+        return (*this);
+    } /* End of methods for decrementing */
+    
+    /* Functions for referencing the data that the current node holds */
+    //itr.Value()
+    inline T Value()
+    {
+        T ret = T();
+        if (_current != NULL)
+        {
+            ret = _current->_data;
+        }
+        return ret;
+    }
+    //itr->
+    T operator->()
+    {
+        return Value();
+    } 
+    //(*itr)
+    T operator*()
+    {
+        return Value();
+    }
+    //(T)itr     (i.e. cast operator)
+    operator T()
+    {
+        return Value();
+    }/* End of accessing functions */
+    
+};/* End of TListIter */
+
+
+
+
+
+
+
+
+
+
 #endif
