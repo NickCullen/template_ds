@@ -12,7 +12,7 @@ template<typename T> class TTreeIter;
 /* foreach macro */
 #define TTREE_foreach(Type, name, in_tree) for (TTreeIter<Type> name = TTreeIter<Type>(&in_tree, true); !name.IsFinished(); name.Next())
 
-/* foreach macro when a list is being used as a pointer */
+/* foreach macro when a tree is being used as a pointer */
 #define TTREEPTR_foreach(Type, name, in_tree) for (TTreeIter<Type> name = TTreeIter<Type>(&in_tree, true); !name.IsFinished(); name.Next())
 
 /* A Tree Node */
@@ -215,14 +215,7 @@ private:
     
     //flag for foreach
     bool _foreach;
-    
-    //searches upwards in tree until it finds a node
-    TTreeNode<T>* SearchUpForNode(TTreeNode<T>* node)
-    {
-        //get parent
-        TTreeNode<T>* parent = node->_parent;
-        return parent;
-    }
+
 public:
 	//ctor
 	TTreeIter()
