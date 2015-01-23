@@ -6,69 +6,92 @@
 #define NULL 0
 #endif 
 
-/* Nodes to store in the TStack */
+/**
+* Node that contains the data and is stored on the stack
+*/
+
 template<typename T>
 struct TStackNode
 {
-	//the data 
-	T _data;
+	T _data; /**< The data this node is holding */
 
-	//all a stack nodes needs is a pointer to previous node
-	TStackNode<T>* _prev;
+	TStackNode<T>* _prev; /**< Pointer to the previous stack node (NULL if we are the first (bottom) item on the stack) */
 
-	//ctor
+	/**
+	* Default constructor of the node which sets _prev pointer 
+	* to NULL
+	*/
 	TStackNode()
 	{
 		_prev = NULL;
 	}
-};/* End of TStackNode */
+};
 
 
 
-/* Templated class for stack */
+/**
+* A template made stack to hold specified data
+*/
+
 template<typename T>
 class TStack
 {
 private:
-	//top of the stack
-	TStackNode<T>* _top;
+	TStackNode<T>* _top; /**< Pointer to the top of the stack */
 	
-	//number of nodes
-	int _count;
+	int _count; /**< Number of items on the stack */
 public:
-	//ctor
+	/**
+	* Default constructor of the stack
+	*/
 	TStack()
 	{
 		_top = NULL;
 		_count = 0;
 	}
-	//dtor
+
+	/**
+	* Default destructor of the stack
+	*/
 	~TStack()
 	{
 		//empty the stack
 		Empty();
 	}
 
-	//empty the stack
+	/**
+	* Call to clear all nodes (will leave data untouched) off 
+	* the stack
+	*/
 	void Empty()
 	{
 		while (!IsEmpty())
 			Pop();
 	}
 
-	//returns true if no items on stack
+	/**
+	* Returns true if the stack is empty false if it contains
+	* 1 or more items
+	* @return Boolean
+	*/
 	inline bool IsEmpty()
 	{
 		return !_count;
 	}
 
-	//returns number of nodes
+	/**
+	* Returns however many items are on the stack
+	* @return Integer
+	*/
 	inline int Count()
 	{
 		return _count;
 	}
 
-	//pops a stack node from the stack
+	/** 
+	* Pops an item of the stack and returns the data 
+	* @return The data type (will be NULL if there were no nodes to remove)
+	*/
 	T Pop()
 	{
 		//the data to return
@@ -94,7 +117,10 @@ public:
 		return ret;
 	}
 
-	//adds an item on top of the stack
+	/**
+	* Pushes the specified data onto the stack by adding it to the top of the stack
+	* @param data The data to be pushed onto the stack
+	*/
 	void Push(T data)
 	{
 		//if there are already items on the list
@@ -125,7 +151,10 @@ public:
 		_count++;
 	}
 
-	//peeks at the current data
+	/**
+	* See what is on the top of the stack but will leave the stack untouched
+	* @return Returns the data that is on the top of the stack (can be NULL if stack is empty)
+	*/
 	T Peek()
 	{
 		T ret = T();
@@ -137,6 +166,6 @@ public:
 
 		return ret;
 	}
-}; /* End of TStack */
+};
 
 #endif

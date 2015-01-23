@@ -12,13 +12,15 @@ class TListIter;
 #define NULL 0
 #endif 
 
-/* foreach macro */
-#define TLIST_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list, false, true); !name.IsFinished(); name.Next())
-#define TLIST_rev_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list, true, true); !name.IsFinished(); name.Prev())
+/**
+* Macro to iterate over the list like a foreach loop when the list is not a pointer
+*/
+#define TLIST_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list); !name.IsFinished(); name.Next())
 
-/* foreach macro when a list is being used as a pointer */
-#define TLISTPTR_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list, false, true); !name.IsFinished(); name.Next())
-#define TLISTPTR_rev_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list, true, true); !name.IsFinished(); name.Prev())
+/**
+* Macro to iterato over the list like a foreach loop when the list is a pointer
+*/
+#define TLISTPTR_foreach(Type, name, in_list) for (TListIter<Type> name = TListIter<Type>(&in_list); !name.IsFinished(); name.Next())
 
 /* Nodes to store in the TList */
 template<typename T>
@@ -57,20 +59,28 @@ public:
 	//ctor
 	TList()
 	{
-		_head = _top = NULL;
 		_count = 0;
+
+		//instantiate _head (z node)
+		_head = new TListNode<T>();
+
+		//point _top to head
+		_top = _head;
 	}
 	//dtor
 	~TList()
 	{
 		//empty the list
 		Empty();
+
+		//delete _head
+		delete(_head);
 	}
 
-	//getter for head
-	inline TListNode<T>* Head()
+	//rturns first item
+	inline TListNode<T>* FirstItem()
 	{
-		return _head;
+		return _head->_next;
 	}
 
 	//getter for top
@@ -104,7 +114,7 @@ public:
 		//the data to return
 		T ret = T();
 
-		if (_top != NULL)
+		if (!IsEmpty())
 		{
 			//store the top in a temp var
 			TListNode<T>* tmp = _top;
@@ -112,12 +122,9 @@ public:
 			ret = tmp->_data;
 			//set the top to be the previous node
 			_top = _top->_prev;
-			//if this was not the last one then set its next to null
-			if (_top != NULL)
-				_top->_next = NULL;
-			//else also set head to NULL
-			else
-				_head = NULL;
+			//set next to null
+			_top->_next = NULL;
+
 			//delete tmp
 			delete(tmp);
 
@@ -132,28 +139,15 @@ public:
 	//adds an item to the end of the list
 	void PushBack(T data)
 	{
-		//if we are appending to the end
-		if (_top != NULL)
-		{
-			//append a new node and set its data
-			_top->_next = new TListNode<T>();
-			_top->_next->_data = data;
+		//append a new node and set its data
+		_top->_next = new TListNode<T>();
+		_top->_next->_data = data;
 
-			//set the new nodes previous to be the top
-			_top->_next->_prev = _top;
+		//set the new nodes previous to be the top
+		_top->_next->_prev = _top;
 			
-			//now make the top the new node
-			_top = _top->_next;
-		}
-		//or to the head of the stack
-		else
-		{
-			//create a new node and set its data
-			_top = new TListNode<T>();
-			_top->_data = data;
-			//also remember to set the head. note we dont need to worry about next/prev pointers
-			_head = _top;
-		}
+		//now make the top the new node
+		_top = _top->_next;
 
 		//increment count
 		_count++;
@@ -162,8 +156,8 @@ public:
 	//remove type from list
 	bool Remove(T instance)
 	{
-		//first find it
-		TListNode<T>* cur = _head;
+		//start at head->next (remember head is just a false node)
+		TListNode<T>* cur = _head->_next;
 		while (cur)
 		{
 			//if not what we are looking for get next else break
@@ -191,9 +185,6 @@ public:
 			//if the node is the top we are removing the end of the list
 			if (node == _top) _top = _top->_prev;
 
-			//if the node is the end then we are removing the first item
-			if (node == _head) _head = _head->_next;
-
 			//link prev to next and vis versa
 			if(prev) prev->_next = next;
 			if(next) next->_prev = prev;
@@ -212,17 +203,18 @@ public:
 	}
 
 	//remove iterator from list (this is implemented at bottom of header file for linking issues
-	bool Remove(TListIter<T> itr)
+	bool Remove(TListIter<T>& itr)
 	{
-		//raise error if trying to remove an iterator in a foreach loop!
-		if (itr._foreach)
-		{
-			printf("ERROR removing an iterator in a foreach loop - this is not allowed!\n");
-			return false;
-		}
+		TListIter<T> tmp(itr);
+		tmp.Prev();
+
+		//remove and cache the return flag
+		bool ret = Remove(itr._current);
+
+		itr = tmp;
 
 		//remove
-		return Remove(itr._current);
+		return ret;
 	}
 
 }; /* End of TList */
@@ -237,15 +229,11 @@ private:
 	//the current list node
 	TListNode<T>* _current;
 
-	//set to true when used in a foreach loop
-	bool _foreach;
-
 public:
 	//default ctor (should not be used)
 	TListIter()
 	{
 		_current = NULL;
-		_foreach = false;
 	}
 
 	//dtor
@@ -255,13 +243,11 @@ public:
 	}
 
 	/* this is the ctor that should be used to instantiate a iter */
-	TListIter(TList<T>* list, bool end, bool used_in_foreach = false)
+	TListIter(TList<T>* list)
 	{
 		//get the head
-		_current = end ? list->Top() : list->Head();
+		_current = list->FirstItem();
 
-		//set if we are using this iterator in a foreach loop or not
-		_foreach = used_in_foreach;
 	}
 
 	/* returns true if the iterator is finished iterating through list */
