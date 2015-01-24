@@ -168,14 +168,12 @@ void RunTTreeTests()
 	int_tree.Insert(11);
 	int_tree.Insert(18);
 
-	//remove root
-	int_tree.Remove(12);
-
-	//iterate through tree
-	for (TTreeIter<int> itr = TTreeIter<int>(&int_tree); !itr.IsFinished(); itr++)
+	//remove the elements in a random order
+	while (!int_tree.IsEmpty())
 	{
-		int_tree.Remove(itr);
+		int_tree.Remove(rand() % 21);
 	}
+
 
 	//create a ttree
 	TTree<TestClass*> tree;
@@ -189,33 +187,34 @@ void RunTTreeTests()
 		tree.Insert(new TestClass("MyName"));
 	}
 
+	//empty the tree
+	tree.Empty();
+
 	//find an item on the tree
 	TestClass* tmp = tree.Find<int>(50, FindObject);
 	
-	//create a tree of ints (just easier to work with for now)
-	TTree<int> new_int_tree = TTree<int>(CompareInt);
-
 	//populate with random
 	for (int i = 0; i < 20; i++)
 	{
-		new_int_tree.Insert(rand() % 100);
+		int_tree.Insert(rand() % 100);
 	}
 
 	//iterate through tree
 	printf("Manual iteration \n");
-	for (TTreeIter<int> itr = TTreeIter<int>(&new_int_tree); !itr.IsFinished(); itr++)
+	for (TTreeIter<int> itr = TTreeIter<int>(&int_tree); !itr.IsFinished(); itr++)
 	{
 		printf("%d\n", (int)itr);
 	}
-	
+
 	//foreach through tree
 	printf("Foreach iteration\n");
-	TTREE_foreach(int, data, new_int_tree)
+	TTREE_foreach(int, data, int_tree)
 	{
-		//printf("%d\n", *data);
-		new_int_tree.Remove(data);
+		printf("%d\n", *data);
 	}
 
+	//empty tree
+	int_tree.Empty();
 	printf("\n---------\n");
 }
 

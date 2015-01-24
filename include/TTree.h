@@ -142,26 +142,78 @@ private:
 
 	/**
 	* To be used internally when removing a node from the tree which has two sibling nodes
-	* it will find the smallest node in the subtree starting (and including) root)
-	* @param root the node at the root of the current search
+	* it will find the smallest node in the subtree starting at root)
+	* @param root The node at the root of the current sub binary tree
 	*/
 	TTreeNode<T>* FindSmallestFromNode(TTreeNode<T>* root)
 	{
-		//has to be the smalled if its the only one
-		if (root->IsLeaf())
-		{
+		//keep going left from the tree untill its null
+		while (root->_left != NULL) 
+			root = root->_left;
+		return root;
+	}
+
+	/**
+	* To be used internally to delete a node from the tree. This is a 
+	* recursive method
+	* @param root The node to be removed from the tree
+	* @param data The data to be removed (required for compairson checking)
+	* @return Returns the new value for root
+	*/
+	TTreeNode<T>* DeleteNode(TTreeNode<T>* root, T data)
+	{
+		//return null
+		if (root == NULL) 
 			return root;
-		}
-		//if it has no left node then it must be smaller than it
-		else if (root->_left == NULL)
-		{
-			return root;
-		}
-		//recursive search next
+
+		//run comparison
+		int result = _comparison(data, root->_data);
+
+		// -1 so data is less then traverse left
+		if (result < 0)
+			root->_left = DeleteNode(root->_left, data);
+
+		//same as above except result == 1 so traversse right
+		else if (result > 0)
+			root->_right = DeleteNode(root->_right, data);
+
+		//The node has been found so we can remove it
 		else
 		{
-			return FindSmallestFromNode(root->_left);
+			// Case 1:  No child - just delete it
+			if (root->_left == NULL && root->_right == NULL) 
+			{
+				SAFE_DELETE(root);
+				_count--;
+			}
+
+			//Case 2: One child set the parents right child pointer to right
+			else if (root->_left == NULL) 
+			{
+				TTreeNode<T>* temp = root;
+				root = root->_right;
+				root->_parent = temp->_parent;
+				SAFE_DELETE(temp);
+				_count--;
+			}
+			//same as above but swapping left pointer
+			else if (root->_right == NULL) 
+			{
+				TTreeNode<T>* temp = root;
+				root = root->_left;
+				root->_parent = temp->_parent;
+				SAFE_DELETE(temp);
+				_count--;
+			}
+			// case 3: 2 children - need to reorder right subtree
+			else 
+			{
+				TTreeNode<T>* temp = FindSmallestFromNode(root->_right);
+				root->_data = temp->_data;
+				root->_right = DeleteNode(root->_right, temp->_data);
+			}
 		}
+		return root;
 	}
 
 public:
@@ -233,7 +285,7 @@ public:
 	{
 		while (!IsEmpty())
 		{
-			Remove(_root);
+			_root = DeleteNode(_root, _root->_data);
 		}
 	}
 
@@ -376,10 +428,8 @@ public:
 	*/
 	virtual void Remove(T data)
 	{
-		if (_count <= 0) return;
-
-		TTreeNode<T>* node = Find(data);
-		Remove(node);
+		//recursive call so we start from root
+		_root = DeleteNode(_root, data);
 	}
 
 	/**
@@ -389,96 +439,12 @@ public:
 	*/
 	virtual void Remove(TTreeIter<T>& itr)
 	{
-		if (_count <= 0) return;
-
-		//see if this its the root node
-		bool is_root = itr._current->_parent == NULL;
-
-		TTreeIter<T> tmp(itr);
+		itr._current = DeleteNode(itr._current, itr._current->_data);
 		
-		//if not the root node make tmp go back
-		if (!is_root)
-		{
-			tmp.Prev();
-			//make sure the node current visitor is not this
+		if (itr._current != NULL)
 			itr._current->_last_visitor = NULL;
-		}
-
-		TTreeNode<T>* node = itr._current;
-		Remove(node);
-
-		//if it was the root node set it to root
-		if (is_root)
-		{
-			tmp._current = _root;
-			//make sure the node current visitor is not this
-			itr._current->_last_visitor = NULL;
-		}
-
-		itr = tmp;
-	}
-
-	/**
-	* Overloaded Remove function to remove a node from the tree 
-	* @param node The node to be removed from the tree
-	*/
-	virtual void Remove(TTreeNode<T>* node)
-	{
-		//dont try to remove a null node
-		if (node == NULL || _count <= 0) return;
-
-		//case 1 (lead node)
-		if (node->IsLeaf())
-		{
-			//simply remove reference and delete node
-			if (node->_parent != NULL)
-			{
-				node->_parent->SetChildToNull(node);
-				SAFE_DELETE(node);
-			}
-			else
-			{
-				SAFE_DELETE(_root);
-			}
-				
-			_count--;
-		}
-		//second case (1 child)
-		else if (node->HasOneChild())
-		{
-			//get the child node
-			TTreeNode<T>* child = node->_left != NULL ? node->_left : node->_right;
-			
-			//delete this node from parent
-			if (node->_parent != NULL)
-			{
-				node->_parent->ReplaceChild(node, child);
-				//delete node
-				SAFE_DELETE(node);
-			}
-			//we are removing the single node from a root node this is abit different....
-			else
-			{
-				_root = child;
-				child->_parent = NULL;
-				if (_root->_left == NULL && _root->_right == NULL) SAFE_DELETE(_root);
-			}
-
-			
-			_count--;
-		}
-		//third case has 2 children
 		else
-		{
-			//find the min in the right child
-			TTreeNode<T>* smallest = FindSmallestFromNode(node->_right);
-
-			//replace data in node
-			node->_data = smallest->_data;
-
-			//remove the duplicate (smallest) node
-			Remove(smallest);
-		}
+			_root = NULL;
 	}
 
 };
