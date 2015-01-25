@@ -201,7 +201,7 @@ void RunTTreeTests()
 
 	//iterate through tree
 	printf("Manual iteration \n");
-	for (TTreeIter<int> itr = TTreeIter<int>(&int_tree); !itr.IsFinished(); itr++)
+	for (TTreeIter<int> itr = TTreeIter<int>(&int_tree); !itr.IsFinished(); itr.Next())
 	{
 		printf("%d\n", (int)itr);
 	}

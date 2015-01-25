@@ -1,6 +1,9 @@
 #ifndef TTREE_H
 #define TTREE_H
 
+/* Include for TStack */
+#include "TStack.h"
+
 /* Forward Decl */
 template<typename T> class TTreeIter;
 
@@ -41,15 +44,12 @@ struct TTreeNode
 
 	TTreeNode<T>* _parent; /**< The parent node of this node (May be NULL if root) */
 
-	TTreeIter<T>* _last_visitor; /** The last iterator to of checked this node (used in iterating over lists */
-
 	/**
 	* The default constructor of TTreeNode which initilizes all pointers to NULL
 	*/
 	TTreeNode()
 	{
 		_left = _right = _parent = NULL;
-		_last_visitor = NULL;
 	}
 
 	/**
@@ -58,67 +58,7 @@ struct TTreeNode
 	~TTreeNode()
 	{
 		_left = _right = _parent = NULL;
-		_last_visitor = NULL;
 	}
-
-	/**
-	* Inline function which will return if this is a leaf node 
-	* or false if node
-	* @return Boolean
-	*/
-	inline bool IsLeaf()
-	{
-		return (_left == NULL && _right == NULL);
-	}
-
-	/**
-	* Inline function which will return true if this is the root node of the tree
-	* @return Boolean
-	*/
-	inline bool IsRoot()
-	{
-		return (_parent == NULL);
-	}
-
-	/**
-	* Inline function which will return true if this node has only a single child
-	* @return Boolean
-	*/
-	inline bool HasOneChild()
-	{
-		return ((_left != NULL && _right == NULL) || (_right != NULL && _left == NULL));
-	}
-
-	
-	/**
-	* Sets the specified child to null
-	* @param child The child to set to NULL
-	*/
-	inline void SetChildToNull(TTreeNode<T>* child)
-	{
-		if (child == _left) _left = NULL;
-		else if (child == _right) _right = NULL;
-	}
-
-	/** 
-	* Replaces the specified child node to the new_child
-	* @param child The child to be replaced
-	* @param new_child the new child to replace the old
-	*/
-	inline void ReplaceChild(TTreeNode<T>* child, TTreeNode<T>* new_child)
-	{
-		if (child == _left)
-		{
-			_left = new_child;
-			new_child->_parent = this;
-		}
-		else if (child == _right)
-		{
-			_right = new_child;
-			new_child->_parent = this;
-		}
-	}
-
 }; 
 
 
@@ -153,6 +93,7 @@ private:
 		return root;
 	}
 
+protected:
 	/**
 	* To be used internally to delete a node from the tree. This is a 
 	* recursive method
@@ -244,7 +185,7 @@ public:
 	/** 
 	* Default destructor which will empty the tree
 	*/
-	~TTree()
+	virtual ~TTree()
 	{
 		//empty list
 		Empty();
@@ -441,10 +382,8 @@ public:
 	{
 		itr._current = DeleteNode(itr._current, itr._current->_data);
 		
-		if (itr._current != NULL)
-			itr._current->_last_visitor = NULL;
-		else
-			_root = NULL;
+		//push this node
+		itr._stack.Push(itr._current);
 	}
 
 };
@@ -461,22 +400,35 @@ class TTreeIter
 {
 	friend class TTree<T>;
 private:
-	TTreeNode<T>* _current; /**< The current node this iterator is at in the tree*/
-  
-	/**
-	* Can only be accessed and used by TTree to move back the iterator
-	* if it is being removed from the tree
-	* @return The previous iterator (this -1)
-	*/
-	inline TTreeIter<T> Prev()
-	{
-		//going back in a BST is to go to parent
-		if (_current != NULL)
-		{
-			_current = _current->_parent;
-		}
 
-		return (*this);
+	TStack<TTreeNode<T>*> _stack; /**< Stack containing nodes to visit */
+
+	TTreeNode<T>* _current; /**< The current node this iterator is at */
+
+	/**
+	* Pushes left node to stack from the given node
+	* @param node The node whos left node will be pushed to stack
+	*/
+	inline void PushLeft(TTreeNode<T>* node)
+	{
+		if (node != NULL)
+		{
+			if (node->_left != NULL)
+				_stack.Push(node->_left);
+		}
+	}
+
+	/**
+	* Pushes right node to stack from the given node
+	* @param node The node whos right node will be pushed to stack
+	*/
+	inline void PushRight(TTreeNode<T>* node)
+	{
+		if (node != NULL)
+		{
+			if (node->_right != NULL)
+				_stack.Push(node->_right);
+		}
 	}
 public:
 	/** 
@@ -501,72 +453,37 @@ public:
 	*/
     TTreeIter(TTree<T>* tree)
     {
-        //get the root node
-        _current = tree->_root;
-        
-        //set its last visitor to be this
-        _current->_last_visitor = this;
+       //set current to root
+		_current = tree->_root;
+
+		//push left and right nodes on the stack (if _current is not NULL)
+		if (_current != NULL)
+		{
+			PushLeft(_current);
+			PushRight(_current);
+		}
     }
     
 	/**
-	* Returns true if the iterator as finished iterating over the tree
+	* Returns true if the iterator as finished iterating over the tree (i.e node stack is empty)
 	* @return Boolean
 	*/
     inline bool IsFinished()
     {
-        return (_current == NULL);
+		return (_current == NULL);
     }
     
 	/**
-	* Overloaded operator to get the next iterator
-	* @return the next iterator (this +1)
+	* Moves the iterator to the next node in the stack
 	*/
-    inline TTreeIter<T> operator++()
+    inline void Next()
     {
-        return Next();
-    }
+		//pop from stack
+		_current = _stack.Pop();
 
-	/**
-	* Overloaded operator to get the next iterator
-	* @return the next iterator (this +1)
-	*/
-    inline TTreeIter<T> operator++(int)
-    {
-        TTreeIter<T> tmp(*this); // copy
-        operator++(); // pre-increment
-        return tmp;   // return old value
-    }
-
-	/**
-	* Gets the next iterator in the tree
-	* @return the next iterator (this +1)
-	*/
-    inline TTreeIter<T> Next()
-    {
-        // actual increment takes place here
-		while (_current != NULL && _current->_last_visitor == this)
-        {
-			//go left if available
-			if (_current->_left && _current->_left->_last_visitor != this)
-            {
-                _current = _current->_left;
-                _current->_last_visitor = this;
-				break;
-            }
-			//go right if available
-			else if (_current->_right && _current->_right->_last_visitor != this)
-            {
-                _current = _current->_right;
-                _current->_last_visitor = this;
-				break;
-            }
-            //set parent
-            else
-            {
-				_current = _current->_parent;
-            }
-        }
-        return (*this);
+		//push left and right
+		PushLeft(_current);
+		PushRight(_current);
     }
 
 	/**
